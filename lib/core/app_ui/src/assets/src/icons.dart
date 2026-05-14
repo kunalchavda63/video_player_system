@@ -1,0 +1,54 @@
+class AssetIcons{
+  static const path = 'assets/icons';
+  static const String icDelete = '$path/ic_delete.svg';
+  static const String icAdd = '$path/ic_add.svg';
+  static const String icEdit = '$path/ic_edit.svg';
+  static const String icProductTag = '$path/ic_product_tag.svg';
+  static const String icGrid = '$path/ic_grid.svg';
+  static const String icPinkChart = '$path/ic_pink_chart.svg';
+  static const String icTotalProduct = '$path/ic_total_products.svg';
+  static const String icGST = '$path/ic_gst.svg';
+  static const String icRemove = '$path/ic_remove.svg';
+  static const String icHome = '$path/ic_home.svg';
+  static const String icInventory = '$path/ic_inventory.svg';
+  static const String icReports = '$path/ic_reports.svg';
+  static const String icCenterBtn = '$path/ic_center_button.svg';
+  static const String icBack = '$path/ic_back.svg';
+  static const String icCustomerAdd = '$path/ic_customer_add.svg';
+  static const String icIndia = '$path/ic_india.svg';
+  static const String icDropdown = '$path/ic_dropdown.svg';
+  static const String icDownload = '$path/ic_download.svg';
+  static const String icCVC = '$path/ic_cvc.svg';
+  static const String icCalendar = '$path/ic_calendar.svg';
+  static const String icCamera = '$path/ic_camera.svg';
+  static const String icSearch = '$path/ic_search.svg';
+  static const String icThreeDot = '$path/ic_three_dot.svg';
+  static const String icMoneySquare = '$path/ic_money_square.svg';
+  static const String icReport = '$path/ic_report.svg';
+  static const String icWhatsapp = '$path/ic_whatsapp.svg';
+  static const String icSms = '$path/ic_sms.svg';
+  static const String icUser = '$path/ic_user.svg';
+  static const String icNewCustomerAdd = '$path/ic_new_customer_add.svg';
+  static const String icBtnUser = '$path/ic_button_user.svg';
+  static const String icListMenu = '$path/ic_list_menu.svg';
+  static const String icChangeLanguageIcon = '$path/ic_change_language_icon.svg';
+  static const String icNotification = '$path/ic_notification.svg';
+  static const String icPaymentReminder = '$path/ic_payment_reminder.svg';
+  static const String icAlert = '$path/ic_alert.svg';
+  static const String icRupee = '$path/ic_rupee.svg';
+  static const String icClose = '$path/ic_close.svg';
+  static const String icPencil = '$path/ic_pencil.svg';
+  static const String icEye = '$path/ic_eye.svg';
+  static const String icStrEye = '$path/ic_str_eye.svg';
+  static const String icPhoneBlack = '$path/ic_phone_black.svg';
+  static const String icDashboard = '$path/ic_dashboard.svg';
+  static const String icLock = '$path/ic_lock.svg';
+  static const String icHistory = '$path/ic_history.svg';
+  static const String icVideo = '$path/ic_videos.svg';
+  static const String icAudio = '$path/ic_audio.svg';
+  static const String icBrowse = '$path/ic_browse.svg';
+  static const String icPlaylist = '$path/ic_playlists.svg';
+  static const String icMore = '$path/ic_more.svg';
+
+
+}
