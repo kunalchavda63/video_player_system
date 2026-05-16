@@ -1,14 +1,13 @@
+import '../../core/app_ui/app_ui.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player_system/core/utilities/utils.dart';
-import 'package:video_player_system/features/screens/audio/audio_screen.dart';
 import 'package:video_player_system/features/screens/browse/browse_screen.dart';
 import 'package:video_player_system/features/screens/folder/folder_screen.dart';
 import 'package:video_player_system/features/screens/more/more_screen.dart';
 import 'package:video_player_system/features/screens/video_screen.dart';
 import 'package:video_player_system/features/screens/videos/videos_screen.dart';
 
-import '../../core/app_ui/app_ui.dart';
 
 final bottomNavProvider = StateProvider<int>((ref) => 0);
 
@@ -55,3 +54,4 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 }
+

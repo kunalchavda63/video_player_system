@@ -1,7 +1,7 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
-export "FLUTTER_ROOT=C:\flutter_windows_3.41.6-stable\flutter"
-export "FLUTTER_APPLICATION_PATH=C:\FlutterProjects\video_player_system"
+export "FLUTTER_ROOT=C:\flutter_windows_3.35.4-stable\flutter"
+export "FLUTTER_APPLICATION_PATH=C:\Users\User\StudioProjects\video_player_system"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
 export "FLUTTER_BUILD_DIR=build"
 export "FLUTTER_BUILD_NAME=1.0.0"

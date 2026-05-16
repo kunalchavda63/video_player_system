@@ -37,6 +37,7 @@ class VideoRepository {
     final albums = await PhotoManager.getAssetPathList(
       type: RequestType.video,
     );
+    Set<String> uniqueVideoIds =  {};
 
     print('Albums found: ${albums.length}'); // Kitne albums mile
 
@@ -52,17 +53,22 @@ class VideoRepository {
       print('Assets in album: ${assets.length}');
 
       for (final asset in assets) {
-        final file = await asset.file;
-        if (file != null) {
-          print('Video found: ${file.path}');
-          videos.add(VideoModel(
-            id: asset.id,
-            title: file.path.split('/').last,
-            filePath: file.path,
-            duration: asset.duration ?? 0,
-            size: await file.length(),
-            modifiedDate: asset.modifiedDateTime,
-          ));
+        if(!uniqueVideoIds.contains(asset.id)) {
+          uniqueVideoIds.add(asset.id);
+          final file = await asset.file;
+          if (file != null) {
+            print('Video found: ${file.path}');
+            videos.add(VideoModel(
+              id: asset.id,
+              title: file.path
+                  .split('/')
+                  .last,
+              filePath: file.path,
+              duration: asset.duration ?? 0,
+              size: await file.length(),
+              modifiedDate: asset.modifiedDateTime,
+            ));
+          }
         }
       }
     }

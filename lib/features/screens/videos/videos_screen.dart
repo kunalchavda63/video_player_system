@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:video_player/video_player.dart';
 import '../../../core/models/src/video_model/video_model.dart';
 import '../../../core/provider/video_provider.dart';
 import 'help/video_card.dart';
