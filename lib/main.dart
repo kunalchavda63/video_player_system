@@ -9,7 +9,7 @@ Future<bool> hasPermission() async {
   // Permission status check
   PermissionState permission = await PhotoManager.requestPermissionExtend();
 
-  print('Permission status: ${permission}'); // Debug ke liye
+  logger.i('Permission status: $permission'); // Debug ke liye
 
   if (permission == PermissionState.authorized) {
     return true;
@@ -28,14 +28,14 @@ void main() async{
   await Permission.videos.request();
 
    var status = await Permission.videos.status;
-  print("Initial video permission status: $status");
+  logger.i("Initial video permission status: $status");
 
   if (!status.isGranted) {
     status = await Permission.videos.request();
-    print("After request: $status");
+    logger.i("After request: $status");
   }
   var pmStatus = await PhotoManager.requestPermissionExtend();
-  print("PhotoManager status: ${pmStatus.isAuth}");
+  logger.i("PhotoManager status: ${pmStatus.isAuth}");
 
 
   final permission = await PhotoManager.requestPermissionExtend();

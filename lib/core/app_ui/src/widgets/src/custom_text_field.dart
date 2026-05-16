@@ -1,6 +1,5 @@
 import '../../../app_ui.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/svg.dart';
 
 class CustomTextField extends StatefulWidget {
 

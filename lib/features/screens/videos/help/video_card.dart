@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'dart:typed_data';
 import 'dart:io';
+import '../../../../core/app_ui/app_ui.dart';
+import '../../../../core/utilities/utils.dart';
 import '../../../../core/models/src/video_model/video_model.dart';
 
 class VideoCard extends StatefulWidget {
@@ -30,41 +30,14 @@ class _VideoCardState extends State<VideoCard> {
     _generateThumbnail();
   }
 // Add this method in your VideoCard
-  Future<void> _generateThumbnailAlternative() async {
-    try {
-      final tempDir = await getTemporaryDirectory();
-      final tempPath = tempDir.path;
-
-      // Generate thumbnail as file
-      final String? thumbnailPath = await VideoThumbnail.thumbnailFile(
-        video: widget.video.filePath,
-        thumbnailPath: tempPath,
-        imageFormat: ImageFormat.JPEG,
-        maxHeight: 200,
-        quality: 70,
-        timeMs: 1000,
-      );
-
-      if (thumbnailPath != null && mounted) {
-        final bytes = await File(thumbnailPath).readAsBytes();
-        setState(() {
-          _thumbnailBytes = bytes;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Alternative method failed: $e');
-      setState(() => _isLoading = false);
-    }
-  }
   Future<void> _generateThumbnail() async {
     try {
-      print('📹 Video Path: ${widget.video.filePath}');
+      logger.i('📹 Video Path: ${widget.video.filePath}');
 
       // Check if file exists
       final file = File(widget.video.filePath);
       if (!await file.exists()) {
-        print('❌ File does not exist: ${widget.video.filePath}');
+        logger.e('❌ File does not exist: ${widget.video.filePath}');
         setState(() {
           _errorMessage = 'File not found';
           _isLoading = false;
@@ -72,7 +45,7 @@ class _VideoCardState extends State<VideoCard> {
         return;
       }
 
-      print('✅ File exists, generating thumbnail...');
+      logger.i('✅ File exists, generating thumbnail...');
 
       // Method 1: Try thumbnailData (for memory)
       Uint8List? uint8list = await VideoThumbnail.thumbnailData(
@@ -85,11 +58,11 @@ class _VideoCardState extends State<VideoCard> {
 
       // Method 2: If method 1 fails, try thumbnailFile (for file)
       if (uint8list == null) {
-        print('⚠️ thumbnailData returned null, trying thumbnailFile...');
+        logger.i('⚠️ thumbnailData returned null, trying thumbnailFile...');
 
         String? thumbnailPath = await VideoThumbnail.thumbnailFile(
           video: widget.video.filePath,
-          thumbnailPath: await widget.video.filePath,
+          thumbnailPath: widget.video.filePath,
           imageFormat: ImageFormat.JPEG,
           maxWidth: 200,
           quality: 70,
@@ -100,27 +73,27 @@ class _VideoCardState extends State<VideoCard> {
           final thumbnailFile = File(thumbnailPath);
           if (await thumbnailFile.exists()) {
             uint8list = await thumbnailFile.readAsBytes();
-            print('✅ Thumbnail generated via file method');
+            logger.i('✅ Thumbnail generated via file method');
           }
         }
       }
 
       if (uint8list != null && mounted) {
-        print('✅ Thumbnail generated successfully! Size: ${uint8list.length} bytes');
+        logger.i('✅ Thumbnail generated successfully! Size: ${uint8list.length} bytes');
         setState(() {
           _thumbnailBytes = uint8list;
           _isLoading = false;
         });
       } else {
-        print('❌ Failed to generate thumbnail - both methods returned null');
+        logger.e('❌ Failed to generate thumbnail - both methods returned null');
         setState(() {
           _errorMessage = 'Thumbnail generation failed';
           _isLoading = false;
         });
       }
     } catch (e, stacktrace) {
-      print('❌ Error generating thumbnail: $e');
-      print('Stacktrace: $stacktrace');
+      logger.e('❌ Error generating thumbnail: $e');
+      logger.e('Stacktrace: $stacktrace');
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -134,18 +107,16 @@ class _VideoCardState extends State<VideoCard> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
+      child: CustomContainer(
+          color: AppColors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withOAlpha(0.1),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
           ],
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -171,7 +142,7 @@ class _VideoCardState extends State<VideoCard> {
                       child: Center(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.4),
+                            color: Colors.black.withOAlpha(0.4),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -193,7 +164,7 @@ class _VideoCardState extends State<VideoCard> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.75),
+                          color: Colors.black.withOAlpha(0.75),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -226,7 +197,7 @@ class _VideoCardState extends State<VideoCard> {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.8),
+                            color: Colors.red.withOAlpha(0.8),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Icon(
@@ -304,7 +275,7 @@ class _VideoCardState extends State<VideoCard> {
         _thumbnailBytes!,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          print('Error displaying image: $error');
+          logger.e('Error displaying image: $error');
           return _buildPlaceholder();
         },
       );

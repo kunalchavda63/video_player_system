@@ -60,6 +60,9 @@ dependencies:
   photo_manager: ^3.9.0
   video_thumbnail: ^0.5.6
   path_provider: ^2.1.5
+  screen_brightness: ^1.0.1
+  volume_controller: ^2.0.7
+  flutter_portal: ^1.1.4
 
 dev_dependencies:
   flutter_test:
@@ -87,6 +90,52 @@ flutter:
     - assets/icons/
     - assets/fonts/
     - assets/images/img.png
+
+
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/poppins/Poppins-Black.ttf
+          weight: 900
+        - asset: assets/fonts/poppins/Poppins-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/poppins/Poppins-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/poppins/Poppins-Medium.ttf
+          weight: 600
+        - asset: assets/fonts/poppins/Poppins-SemiBold.ttf
+          weight: 500
+        - asset: assets/fonts/poppins/Poppins-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/poppins/Poppins-Light.ttf
+          weight: 300
+        - asset: assets/fonts/poppins/Poppins-ExtraLight.ttf
+          weight: 200
+        - asset: assets/fonts/poppins/Poppins-Thin.ttf
+          weight: 100
+
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/montserrat/Montserrat-Black.ttf
+          weight: 900
+        - asset: assets/fonts/montserrat/Montserrat-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/montserrat/Montserrat-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/montserrat/Montserrat-Medium.ttf
+          weight: 600
+        - asset: assets/fonts/montserrat/Montserrat-SemiBold.ttf
+          weight: 500
+        - asset: assets/fonts/montserrat/Montserrat-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/montserrat/Montserrat-Light.ttf
+          weight: 300
+        - asset: assets/fonts/montserrat/Montserrat-ExtraLight.ttf
+          weight: 200
+        - asset: assets/fonts/montserrat/Montserrat-Thin.ttf
+          weight: 100
+
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

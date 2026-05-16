@@ -1,5 +1,4 @@
 import '../../../../app_ui/app_ui.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class CustomCircleSvgIcon extends StatelessWidget {
   const CustomCircleSvgIcon({

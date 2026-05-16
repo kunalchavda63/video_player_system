@@ -1,45 +1,56 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_manager/photo_manager.dart';
-import 'package:video_player_system/core/utilities/utils.dart';
+import '../../../../core/models/src/video_model/video_model.dart';
+import '../../../../core/utilities/src/extensions/logger/logger.dart';
 
-Future<List<AssetEntity>> fetchVideos() async {
-  try {
-    logger.d("Starting to fetch videos...");
+final videoListProvider = FutureProvider<List<VideoModel>>((ref) async {
+  logger.d("VideoListProvider called");
 
-    // Request permission
-    final permission = await PhotoManager.requestPermissionExtend();
-    logger.d("Permission status: ${permission.isAuth}");
+  // ✅ Direct permission request
+  final permission = await PhotoManager.requestPermissionExtend();
+  logger.d("Permission in provider: ${permission.isAuth}");
 
-    if (!permission.isAuth) {
-      logger.e("Permission denied");
-      return [];
-    }
-
-    // Get albums with videos
-    final albums = await PhotoManager.getAssetPathList(
-      type: RequestType.video,
-    );
-
-    logger.d("Found ${albums.length} albums with videos");
-
-    if (albums.isEmpty) {
-      logger.d("No albums found");
-      return [];
-    }
-
-    final recentAlbum = albums.first;
-    logger.d("Recent album: ${recentAlbum.name}");
-
-    // Get videos
-    final videos = await recentAlbum.getAssetListPaged(
-      page: 0,
-      size: 100,
-    );
-
-    logger.d("Total Videos loaded: ${videos.length}");
-    return videos;
-
-  } catch (e, stacktrace) {
-    logger.e("Error in fetchVideos: $e\n$stacktrace");
+  if (!permission.isAuth && !permission.isLimited) {
+    logger.d("No permission, returning empty");
     return [];
   }
-}
+
+  // ✅ Get videos
+  final albums = await PhotoManager.getAssetPathList(
+    type: RequestType.video,
+  );
+
+  logger.d("Albums found: ${albums.length}");
+
+  List<VideoModel> videos = [];
+  Set<String> uniqueIds = {};
+
+  for (final album in albums) {
+    final assets = await album.getAssetListRange(
+      start: 0,
+      end: 1000,
+    );
+
+    for (final asset in assets) {
+      if (!uniqueIds.contains(asset.id)) {
+        uniqueIds.add(asset.id);
+        final file = await asset.file;
+        if (file != null) {
+          videos.add(VideoModel(
+            id: asset.id,
+            title: file.path.split('/').last,
+            filePath: file.path,
+            duration: asset.duration ?? 0,
+            size: await file.length(),
+            modifiedDate: asset.modifiedDateTime
+          ));
+        }
+      }
+    }
+  }
+
+  videos.sort((a, b) => b.modifiedDate.compareTo(a.modifiedDate));
+  logger.d("Total videos: ${videos.length}");
+
+  return videos;
+});
