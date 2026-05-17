@@ -16,33 +16,40 @@ class VideoGalleryScreen extends ConsumerStatefulWidget {
 }
 
 class _VideoGalleryScreenState extends ConsumerState<VideoGalleryScreen> {
+  // ✅ Future ko ek variable mein store kiya taaki build() mein baar-baar call na ho
+  Future<PermissionState>? _permissionFuture;
 
   @override
   void initState() {
     super.initState();
-    // ✅ Screen open hote hi permission request karo
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _requestDirectPermission();
+    _checkPermissionInitially();
+  }
+
+  void _checkPermissionInitially() {
+    setState(() {
+      _permissionFuture = PhotoManager.requestPermissionExtend();
+    });
+
+    _permissionFuture?.then((permission) {
+      if (permission.isAuth || permission.isLimited) {
+        ref.refresh(videoListProvider);
+      }
     });
   }
 
   Future<void> _requestDirectPermission() async {
-    logger.d("Requesting permission...");
-
-    // ✅ Direct permission request - popup ayega
+    logger.d("Requesting permission manually...");
     final permission = await PhotoManager.requestPermissionExtend();
-    logger.d("Permission status: ${permission.isAuth}");
 
-    if (permission.isAuth) {
-      // ✅ Permission mil gayi, videos load karo
-      ref.refresh(videoListProvider);
-    } else if (permission.isLimited) {
-      // ✅ Limited permission
+    // ✅ State update karo
+    setState(() {
+      _permissionFuture = Future.value(permission);
+    });
+
+    if (permission.isAuth || permission.isLimited) {
       ref.refresh(videoListProvider);
     } else {
-      // ❌ Permission deny kar di
       logger.d("Permission denied");
-      setState(() {});
     }
   }
 
@@ -52,131 +59,192 @@ class _VideoGalleryScreenState extends ConsumerState<VideoGalleryScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text(
-          'All Videos',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.deepPurple,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () {
-              _requestDirectPermission();
-            },
-          ),
-        ],
-      ),
-      body: FutureBuilder<PermissionState>(
-        future: PhotoManager.requestPermissionExtend(),
-        builder: (context, snapshot) {
-          // ✅ Loading state
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(color: Colors.deepPurple),
-                  SizedBox(height: 20),
-                  Text(
-                    'Requesting permission...',
-                    style: TextStyle(color: Colors.white),
+      // ✅ Pull to refresh functionality
+      body: RefreshIndicator(
+        color: Colors.deepPurpleAccent,
+        backgroundColor: Colors.grey.shade900,
+        onRefresh: () async {
+          await _requestDirectPermission();
+        },
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          slivers: [
+            // ✅ Beautiful Collapsing App Bar
+          SliverAppBar(
+          pinned: true,
+          stretch: true,
+          expandedHeight: 90.0, // Thoda bada kiya taaki gradient acche se dikhe
+          backgroundColor: const Color(0xFF2E6B7A), // Teal/Blueish color matching image
+          flexibleSpace: FlexibleSpaceBar(
+            titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+            title: CustomText(
+              data: "V I D E O S",
+              style: BaseStyle.s16w500.c(AppColors.white).family(FontFamily.poppins).copyWith(letterSpacing: 2.0),
+            ),
+            background: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF2E6B7A), // Screenshot wala top teal color
+                    Color(0xFF1F4C5A), // Bottom dark teal
+                  ],
+                ),
+              ),
+            ),
+          ),),
+
+            // ✅ Permission Future Builder wrapped in Slivers
+            FutureBuilder<PermissionState>(
+              future: _permissionFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _buildLoadingView("Checking permissions..."),
+                  );
+                }
+
+                if (!snapshot.hasData || (!snapshot.data!.isAuth && !snapshot.data!.isLimited)) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: buildPermissionDeniedView(),
+                  );
+                }
+
+                // ✅ Provider mapping into Slivers
+                return videosAsync.when(
+                  data: (videos) {
+                    if (videos.isEmpty) {
+                      return SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: buildNoVideosView(),
+                      );
+                    }
+                    return buildSliverVideoGrid(videos);
+                  },
+                  error: (error, stack) {
+                    logger.e("Error: $error");
+                    return SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: buildErrorView(error),
+                    );
+                  },
+                  loading: () => SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _buildLoadingView("Loading videos..."),
                   ),
-                ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- SLIVER WIDGETS ---
+
+  Widget buildSliverVideoGrid(List<VideoModel> videos) {
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.75, // Adjust based on your VideoCard UI
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        delegate: SliverChildBuilderDelegate(
+              (context, index) {
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              child: VideoCard(
+                video: videos[index],
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => VideoPlayerScreen(
+                        allVideos: videos,
+                        initialIndex: index,
+                      ),
+                    ),
+                  );
+                },
               ),
             );
-          }
+          },
+          childCount: videos.length,
+        ),
+      ),
+    );
+  }
 
-          // ✅ Permission not granted
-          if (!snapshot.hasData ||
-              (!snapshot.data!.isAuth && !snapshot.data!.isLimited)) {
-            return buildPermissionDeniedView();
-          }
+  // --- STATE VIEWS ---
 
-          // ✅ Permission granted, show videos
-          return videosAsync.when(
-            data: (videos) {
-              if (videos.isEmpty) {
-                return buildNoVideosView();
-              }
-              return buildVideoGridView(videos);
-            },
-            error: (error, stack) {
-              logger.e("Error: $error");
-              return buildErrorView(error);
-            },
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: Colors.deepPurple),
-            ),
-          );
-        },
+  Widget _buildLoadingView(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(color: Colors.deepPurpleAccent),
+          const SizedBox(height: 24),
+          Text(
+            message,
+            style: const TextStyle(color: Colors.white70, fontSize: 16, letterSpacing: 1.2),
+          ),
+        ],
       ),
     );
   }
 
   Widget buildPermissionDeniedView() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.video_library, size: 80, color: Colors.grey),
-          const SizedBox(height: 20),
-          const Text(
-            'Permission Required',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'This app needs access to your videos',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-          const SizedBox(height: 30),
-          ElevatedButton(
-            onPressed: () async {
-              logger.d("Grant Permission clicked");
-
-              // ✅ Direct permission request - NO SETTINGS
-              final result = await PhotoManager.requestPermissionExtend();
-              logger.d("New permission result: ${result.isAuth}");
-
-              if (result.isAuth || result.isLimited) {
-                // ✅ Permission mil gayi
-                ref.refresh(videoListProvider);
-                setState(() {});
-              } else {
-                // ❌ Phir se deny kar di
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Permission is required to view videos'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepPurple,
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.lock_outline, size: 60, color: Colors.deepPurpleAccent),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Access Required',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'We need access to your gallery to show your videos here.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 15, color: Colors.white54, height: 1.5),
+            ),
+            const SizedBox(height: 40),
+            ElevatedButton.icon(
+              onPressed: _requestDirectPermission,
+              icon: const Icon(Icons.folder_shared, color: Colors.white),
+              label: const Text(
+                'Grant Permission',
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurpleAccent,
+                elevation: 4,
+                shadowColor: Colors.deepPurpleAccent.withOpacity(0.5),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
             ),
-            child: const Text(
-              'Grant Permission',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ),
-          const SizedBox(height: 20),
-          TextButton(
-            onPressed: () {
-              _requestDirectPermission();
-            },
-            child: Text(
-              'Retry',
-              style: TextStyle(color: Colors.grey.shade400),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -186,83 +254,63 @@ class _VideoGalleryScreenState extends ConsumerState<VideoGalleryScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.video_library, size: 80, color: Colors.grey),
-          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade900,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.videocam_off_outlined, size: 64, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 24),
           const Text(
             'No Videos Found',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
-            'No videos found on your device',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              _requestDirectPermission();
-            },
-            child: const Text('Refresh'),
+            'Your device doesn\'t have any videos yet.',
+            style: TextStyle(fontSize: 15, color: Colors.grey.shade500),
           ),
         ],
       ),
-    );
-  }
-
-  Widget buildVideoGridView(List<VideoModel> videos) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.7,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-      ),
-      itemCount: videos.length,
-      itemBuilder: (context, index) {
-        return VideoCard(
-          video: videos[index],
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => VideoPlayerScreen(
-                  video: videos[index],
-                  allVideos: videos,
-                  initialIndex: index,
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 
   Widget buildErrorView(Object error) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 80, color: Colors.red),
-          const SizedBox(height: 20),
-          const Text(
-            'Error Loading Videos',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            error.toString(),
-            style: const TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 30),
-          ElevatedButton(
-            onPressed: () {
-              _requestDirectPermission();
-            },
-            child: const Text('Retry'),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.redAccent),
+            const SizedBox(height: 20),
+            const Text(
+              'Something went wrong',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              error.toString(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white54, fontSize: 13),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 30),
+            OutlinedButton.icon(
+              onPressed: _requestDirectPermission,
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              label: const Text('Try Again', style: TextStyle(color: Colors.white)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.deepPurpleAccent),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
